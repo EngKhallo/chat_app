@@ -1,5 +1,6 @@
 import 'package:chat_app/screens/find_users_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,35 +14,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final users = [].obs;
-
-  void getAllUsers() async {
-    final db = FirebaseFirestore.instance;
-    final collection = db.collection('users');
-    final results = await collection.get();
-
-    print(results.size);
-
-    final storage = FirebaseStorage.instance;
-
-    // loping through the results
-    for (final document in results.docs) {
-      final user = {
-        'name': document.data()['name'],
-        'picture':
-            await storage.ref('users').child(document.id).getDownloadURL(),
-      };
-
-      users.add(user);
-
-      print(user);
-    }
-  }
+  final chats = [].obs;
+  final loading = true.obs;
 
   @override
   void initState() {
     super.initState();
-    getAllUsers();
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final db = FirebaseFirestore.instance;
+    final usersCol = db.collection('users');
+
+    usersCol.doc(uid).collection('chats').snapshots().listen((event) async {
+      chats.clear();
+      for (var doc in event.docs) {
+        final user = await usersCol.doc(doc.id).get();
+        chats.add({
+          'id': doc.id,
+          'name': user.data()?['name'] ?? 'Null',
+          'picture': await FirebaseStorage.instance
+              .ref('users')
+              .child(doc.id)
+              .getDownloadURL(),
+          'lastMessage': doc.data()['lastMessage'],
+        });
+      }
+      loading.value = false;
+    });
   }
 
   @override
@@ -57,26 +56,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(CupertinoIcons.list_bullet),
         ),
         body: Obx(() {
-          if (users.isEmpty) {
+          if (loading.isTrue) {
             return Center(child: CircularProgressIndicator());
           } else {
-            return ListView.builder(
-              itemCount: users.length,
+            return buildList();
+          }
+        }));
+  }
+
+  buildList() {
+    return Obx(() {
+      if (chats.isEmpty) {
+        return Center(child: Text('No Chats'));
+      } else {
+        return ListView.builder(
+              itemCount: chats.length,
               itemBuilder: (ctx, index) {
-                final user = users[index];
-                final name = user['name'];
-                final picture = user['picture'];
+                final chat = chats[index];
+                final id = chat['name'];
+                final lastMessage = chat['lastMessage'];
 
                 return ListTile(
                   leading: CircleAvatar(
-                      backgroundImage: NetworkImage(picture), radius: 24),
+                      backgroundImage: NetworkImage(chat['picture']), radius: 24),
                   title:
-                      Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Chatting Details'),
+                      Text(chat['name'], style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(lastMessage['messagee']),
                 );
               },
             );
           }
-        }));
+      });
+    }
   }
-}
