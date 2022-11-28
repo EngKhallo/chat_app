@@ -23,7 +23,7 @@ class _WelcomePageState extends State<WelcomePage> {
           SizedBox(
             child: Image.asset('assets/images/splash.png'),
           ),
-          SizedBox(height: 200),
+          // SizedBox(height: 200),
           Column(
             children: [
               Text('OpenTalk',

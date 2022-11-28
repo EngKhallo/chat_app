@@ -1,3 +1,4 @@
+import 'package:chat_app/screens/find_users_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -46,30 +47,36 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: Text('Open Talk')),
+        appBar: AppBar(
+          title: Text('Open Talk'),
+        ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Get.to(FindUsers());
+          },
           child: Icon(CupertinoIcons.list_bullet),
         ),
         body: Obx(() {
           if (users.isEmpty) {
             return Center(child: CircularProgressIndicator());
-          }
-          return ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (ctx, index) {
-              final user = users[index];
-              final name = user['name'];
-              final picture = user['picture'];
+          } else {
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (ctx, index) {
+                final user = users[index];
+                final name = user['name'];
+                final picture = user['picture'];
 
-              return ListTile(
-                leading: CircleAvatar(backgroundImage: NetworkImage(picture), radius: 24),
-                title: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Chatting Details'),
-                trailing: Icon(CupertinoIcons.trash_fill),
-              );
-            },
-          );
+                return ListTile(
+                  leading: CircleAvatar(
+                      backgroundImage: NetworkImage(picture), radius: 24),
+                  title:
+                      Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Chatting Details'),
+                );
+              },
+            );
+          }
         }));
   }
 }
